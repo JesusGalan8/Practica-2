@@ -194,7 +194,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // 6️⃣ Cerrar el archivo
     close(fd);
     return 0;
 }
