@@ -6,17 +6,17 @@ CFLAGS=-I.
 
 # Makefile para compilar scripter y mygrep
 
-# Objetivo por defecto que compila ambos programas
-all: scripter mygrep
+# Objetos y ejecutable
+OBJ = scripter.o
+EXEC = scripter
 
-# Regla para compilar el programa scripter a partir de scripter.c
-scripter: scripter.c
-	$(CC) $(CFLAGS) -o scripter scripter.c  # Compilar scripter.c y generar el ejecutable "scripter"
+all: $(EXEC)
 
-# Regla para compilar el programa mygrep a partir de mygrep.c
-mygrep: mygrep.c
-	$(CC) $(CFLAGS) -o mygrep mygrep.c      # Compilar mygrep.c y generar el ejecutable "mygrep"
+%.o: %.c
+	$(CC) $(FLAGS) $(CFLAGS) -c -o $@ $<
 
-# Regla para limpiar los ejecutables y ficheros objeto generados
+$(EXEC): $(OBJ)
+	$(CC) $(FLAGS) $(CFLAGS) -o $@ $^
+
 clean:
-	rm -f scripter mygrep *.o  # Eliminar "scripter", "mygrep" y cualquier archivo objeto (*.o)
+	rm -f $(OBJ) $(EXEC)
