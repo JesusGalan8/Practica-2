@@ -92,109 +92,125 @@ int procesar_linea(char *linea) {
         //En caso contrario le decimos que no se ejecute de fondo
         background = 0;
     }
-    // Se necesitan n-1 pipes para n comandos
+    /*Cada comando, excepto del primero y el último, nesetiran conestrarse con el anterior y el siguiente. 
+    De manera que si tenemos n comandos solo necesitamos n-1 concexiones*/
     int pipes[num_comandos - 1][2];
-    pid_t pids[num_comandos];
-
-    // Crear los pipes necesarios
+    //Creamos los pipes
     for (int i = 0; i < num_comandos - 1; i++) {
         if (pipe(pipes[i]) == -1) {
-            perror("Error al crear el pipe");
-            exit(EXIT_FAILURE);
+            perror("Error al crear pipe");
+            exit(-1);
         }
-    }
+    } 
 
-    // Para cada comando se crea un proceso hijo
+    //Cramos un array para guardar cada identificador de cada hijo
+    pid_t pids[num_comandos];
+    //Creanis un bucle que recorre cada comnaod
     for (int i = 0; i < num_comandos; i++) {
-        // Separamos el comando actual en tokens (comando y argumentos)
+        /*Vamos da dvidiadr el comando en partes usandoo como delimitadores
+        espacio, tabubulación o salto de línea. De esta maenra en el primer 
+        tolen tendrémos el nombre del coamdno y en los siguientes sus argumentos*/
         tokenizar_linea(comandos[i], " \t\n", argvv, MAX_ARGS);
-        // Detectamos redirecciones (por ejemplo, "<", ">", "!>")
         procesar_redirecciones(argvv);
-
-        // Crear el proceso hijo para este comando
+        
+        //Creamos un nuevo hijo con fork y el resultado se almacena en pids[i]
         pids[i] = fork();
+        //Si su valor es -1 significa que hubo un error
         if (pids[i] == -1) {
             perror("Error en fork");
-            exit(EXIT_FAILURE);
+            exit(-2);
         }
-
-        if (pids[i] == 0) {  // Código del hijo
-            // Si no es el primer comando, redirigimos la entrada
+        //Si el valor del pid es 0 significa que estamos en el hijo
+        if (pids[i] == 0) {
+            //Si i no es 0 signfica que no es el primer comando de la cadena, entonces lo que 
+            //será conectarse con un pipe al comando anterior
             if (i != 0) {
-                // Cerramos la entrada estándar (descriptor 0)
-                close(STDIN_FILENO);
-                // Duplica el extremo de lectura del pipe anterior en STDIN
-                dup(pipes[i - 1][0]);
+                close(0);
+                if (dup(pipes[i - 1][0]) < 0) {      // Duplicamos el extremo de lectura del pipe anterior
+                    perror("Error en dup para STDIN");
+                    exit(-3);
+                }                
             }
-            // Si no es el último comando, redirigimos la salida
+            //Si i no es el último coamndo, dbe enviar su salida al siguiente comando mediante el pipe
             if (i != num_comandos - 1) {
-                close(STDOUT_FILENO);
-                dup(pipes[i][1]);
-            }
-
-            // Cerramos todos los pipes en el proceso hijo (ya duplicados)
+                if (dup(pipes[i][1]) < 0) {          // Duplicamos el extremo de escritura del pipe actual
+                    perror("Error en dup para STDOUT");
+                    exit(-4);
+                }            }
+            //Una vez redirigidos los descriptores, entonces podemos cerrar los originales
             for (int j = 0; j < num_comandos - 1; j++) {
                 close(pipes[j][0]);
                 close(pipes[j][1]);
             }
-
-            // Si hay redirección de entrada de archivo, la configuramos
+            //Si filev[0] no es null entnces signifca qeu se indico un archivo para la entrada
             if (filev[0] != NULL) {
-                int fd = open(filev[0], O_RDONLY);
-                if (fd < 0) {
+                //Abrimos el archvo en modo lectura
+                int fd_in = open(filev[0], O_RDONLY);
+                // Si falla mostramos error
+                if (fd_in < 0) {
                     perror("Error abriendo archivo de entrada");
-                    exit(-1);
+                    exit(-5);
                 }
-                close(STDIN_FILENO);
-                dup(fd);
-                close(fd);
-            }
-            // Redirección de salida de archivo
+                close(0);
+                if (dup(fd_in) < 0) {
+                    perror("Error duplicando fd de entrada");
+                    exit(-6);
+                }
+                close(fd_in);
+
+            //Similar al anterior, si filev[1] no es null significa que debemos poner nuestro descriptor en la salida estandar
             if (filev[1] != NULL) {
-                int fd = open(filev[1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
-                if (fd < 0) {
+                int fd_out = open(filev[1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                if (fd_out < 0) {
                     perror("Error abriendo archivo de salida");
-                    exit(-1);
+                    exit(-7);
                 }
-                close(STDOUT_FILENO);
-                dup(fd);
-                close(fd);
+                close(1);
+                if (dup(fd_out) < 0) {
+                    perror("Error duplicando fd de salida");
+                    exit(-8);
+                }
+                close(fd_out);
             }
-            // Redirección de error a archivo
+            //Similar al anterior, si filev[2] no es null significa que debemos poner nuestro descriptor en la salida error
             if (filev[2] != NULL) {
-                int fd = open(filev[2], O_WRONLY | O_CREAT | O_TRUNC, 0644);
-                if (fd < 0) {
+                int fd_err = open(filev[2], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                if (fd_err < 0) {
                     perror("Error abriendo archivo de error");
-                    exit(-1);
+                    exit(-9);
                 }
-                close(STDERR_FILENO);
-                dup(fd);
-                close(fd);
+                close(2);
+                if (dup(fd_err) < 0) {
+                    perror("Error duplicando fd de error");
+                    exit(-10);
+                }
+                close(fd_err);
             }
-
-            // (Opcional: Puedes incluir aquí printf() de depuración si lo deseas)
-
-            // Ejecutar el comando con sus argumentos
+            //La función remplanza el proceso actual por que queremos ejecutar. En argvv[0] tenemos el nombre
+            //y en agrvv tenemos sus arguemntos
             if (execvp(argvv[0], argvv) == -1) {
                 perror("Error ejecutando comando");
-                exit(-1);
-            }
-        } 
-        // Proceso padre: si no es background, espera al hijo actual
-        else {
-            if (background == 0) {
-                wait(NULL);
-            } else {
-                printf("Proceso en background: %d\n", pids[i]);
+                exit(-11);
             }
         }
     }
-    // En el proceso padre, cerrar todos los pipes (ya que se heredaron en los hijos)
+    //Cerramos los pipes en el proceso padre ya que para este no son necesarios
     for (int i = 0; i < num_comandos - 1; i++) {
         close(pipes[i][0]);
         close(pipes[i][1]);
     }
-
+    /*Si backgrounf es 0, significa que ejecutamos el proceso en primer plano, lo que implica que 
+    el padre va a esperar a que cada uno de sus hijos termine*/
+    if (background == 0) {
+        for (int i = 0; i < num_comandos; i++) {
+            waitpid(pids[i], NULL, 0);
+        }
+    } else {
+        //en caso contrario el padre imprimirá el 
+        for (int i = 0; i < num_comandos; i++) {
+            printf("Proceso en background: %d\n", pids[i]);
+        }
+    }
     return num_comandos;
 }
 
