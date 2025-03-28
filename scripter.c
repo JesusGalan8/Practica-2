@@ -157,6 +157,7 @@ int procesar_linea(char *linea) {
                     exit(-6);
                 }
                 close(fd_in);
+            }
 
             //Similar al anterior, si filev[1] no es null significa que debemos poner nuestro descriptor en la salida estandar
             if (filev[1] != NULL) {
@@ -268,8 +269,8 @@ int main(int argc, char *argv[]) {
                     return -3;
                 }
                 // se verifica que la linea cumple con el formato esperado
-                if line_number == 0{
-                    if (es_linea_valida(line)) == -1 {
+                if (line_number == 0){
+                    if ((es_linea_valida(line)) == -1) {
                         perror("Encabezado inválido: no es un script de SSOO");
                         close(fd);
                         return -1;                
