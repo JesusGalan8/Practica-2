@@ -12,31 +12,66 @@ int main(int argc, char *argv[]) {  // Función principal.
         fprintf(stderr, "Uso: %s <ruta_fichero> <cadena_a_buscar>\n", argv[0]);  // Mostrar mensaje de uso.
         exit(-1);  // Salir con error.
     }
-
-    FILE *fp = fopen(argv[1], "r");  // Abrir el fichero especificado en modo lectura.
-    if(!fp) {  // Si la apertura del fichero falla.
+    int fd;
+     // Abrir el fichero especificado en modo lectura. 
+    if (( fd = open(argv[1], O_RDONLY)) ==-1); {  // Si la apertura del fichero falla.
         perror("Error al abrir el fichero");  // Mostrar mensaje de error.
-        exit(-1);  // Salir con error.
+        return -
+        1;  // Salir con error.
     }
 
-    char line[MAX_LINE];  // Buffer para almacenar cada línea leída.
-    int found = 0;       // Variable para indicar si se encontró la cadena.
-    while(fgets(line, MAX_LINE, fp) != NULL) {  // Leer el fichero línea a línea.
-        if(strstr(line, argv[2]) != NULL) {  // Buscar la cadena especificada en la línea.
-            printf("%s", line);  // Imprimir la línea si contiene la cadena.
-            found = 1;  // Marcar que se encontró la cadena.
+     // Abrir (o crear) el fichero de salida.
+     int out_fd = open("salida.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+     if(out_fd < 0) {
+         perror("Error al abrir/crear el fichero de salida");
+         close(fd);
+         return -1;
+     }
+ 
+     // Redirigir la salida estándar: cerramos STDOUT y duplicamos out_fd.
+     close(STDOUT_FILENO);
+     if(dup(out_fd) < 0) {
+         perror("Error al duplicar el fichero de salida");
+         close(in_fd);
+         close(out_fd);
+         return -1;
+     }
+     close(out_fd); // Cerramos el descriptor original, ya no es necesario.
+
+    char line[MAX_LINE];
+    int index = 0;
+    int found = 0;
+    char ch;
+    ssize_t n;
+
+    // Leemos el fichero carácter a carácter y vamos armando líneas.
+    while ((n = read(fd, &ch, 1)) == 1) {
+        if (ch == '\n' || index >= MAX_LINE - 1) {
+            line[index] = '\0';
+            // Si la línea contiene la cadena buscada, la imprimimos.
+            if (strstr(line, argv[2]) != NULL) {
+                write(STDOUT_FILENO, line, strlen(line));
+                write(STDOUT_FILENO, "\n", 1);
+                found = 1;
+            }
+            index = 0;  // Reiniciamos el índice para la siguiente línea.
+        } else {
+            line[index++] = ch;
         }
     }
 
-    if(ferror(fp)) {  // Verificar si ocurrió algún error durante la lectura.
-        perror("Error al leer el fichero");  // Mostrar mensaje de error.
-        fclose(fp);  // Cerrar el fichero.
-        exit(-1);  // Salir con error.
+    if (n == -1) {
+        perror("Error al leer el fichero");
+        close(fd);
+        exit(-1);
     }
-    fclose(fp);  // Cerrar el fichero después de terminar la lectura.
+    close(fd);
 
-    if(!found) {  // Si no se encontró la cadena en ninguna línea.
-        printf("\"%s\" not found.\n", argv[2]);  // Imprimir mensaje indicando que la cadena no se encontró.
+    if (!found) {
+        char msg[128];
+        snprintf(msg, sizeof(msg), "\"%s\" not found.\n", argv[2]);
+        write(STDOUT_FILENO, msg, strlen(msg));
     }
-    return 0;  // Terminar el programa exitosamente.
+    return 0;
 }
+Ex
