@@ -18,5 +18,8 @@ all: $(EXEC)
 $(EXEC): $(OBJ)
 	$(CC) $(FLAGS) $(CFLAGS) -o $@ $^
 
+mygrep: mygrep.c
+	$(CC) $(FLAGS) $(CFLAGS) -o mygrep mygrep.c
+
 clean:
-	rm -f $(OBJ) $(EXEC)
+	rm -f $(OBJ) $(EXEC) mygrep
