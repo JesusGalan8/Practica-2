@@ -7,19 +7,28 @@ CFLAGS=-I.
 # Makefile para compilar scripter y mygrep
 
 # Objetos y ejecutable
-OBJ = scripter.o
-EXEC = scripter
+PROG1 = scripter
+PROG2 = mygrep
 
-all: $(EXEC)
+SRC1 = scripter.c
+SRC2 = mygrep.c
+
+OBJ1 = $(SRC1:.c=.o)
+OBJ2 = $(SRC2:.c=.o)
+
+all: $(PROG1) $(PROG2)
+
+$(PROG1): $(OBJ1)
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(PROG2): $(OBJ2)
+	$(CC) $(CFLAGS) -o $@ $^
 
 %.o: %.c
-	$(CC) $(FLAGS) $(CFLAGS) -c -o $@ $<
-
-$(EXEC): $(OBJ)
-	$(CC) $(FLAGS) $(CFLAGS) -o $@ $^
-
-mygrep: mygrep.c
-	$(CC) $(FLAGS) $(CFLAGS) -o mygrep mygrep.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJ) $(EXEC) mygrep
+	rm -f $(PROG1) $(PROG2) $(OBJ1) $(OBJ2)
+
+distclean: clean
+	rm -f *~

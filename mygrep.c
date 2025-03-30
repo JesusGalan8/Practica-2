@@ -21,13 +21,13 @@ int main(int argc, char *argv[]) {  // Función principal, recibe argumentos des
     int in_fd,out_fd;
 
     // Abrir el fichero de entrada usando open (sólo llamadas al sistema).
-    if(in_fd = open(argv[1], O_RDONLY) == -1) {
+    if ((in_fd = open(argv[1], O_RDONLY)) == -1) {
         perror("Error al abrir el fichero");
         return -2;
     }
 
       // Abrir (o crear) el fichero de salida.
-    if(out_fd = open("salida.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644) == -1) {
+    if ((out_fd = open("salida.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644)) == -1) {
         perror("Error al abrir/crear el fichero de salida");
         close(in_fd);
         return -3;
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {  // Función principal, recibe argumentos des
 
     // Leemos el fichero de entrada carácter a carácter.
     while ((bytes_read = read(in_fd, buffer, BUFFER_SIZE)) > 0) {
-        for (ssize_t i = 0; i < bytes_read; i++){}
+        for (ssize_t i = 0; i < bytes_read; i++){
             if (buffer[i] == '\n' || pos_line >= MAX_LINE - 1) {
                 line[pos_line] = '\0';
                 if (strstr(line, argv[2]) != NULL) {
@@ -73,3 +73,4 @@ int main(int argc, char *argv[]) {  // Función principal, recibe argumentos des
         write(STDOUT_FILENO, msg, strlen(msg));
     }
     return 0;
+}
