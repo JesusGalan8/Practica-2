@@ -189,9 +189,18 @@ int procesar_linea(char *linea) {
             }
             //La función remplanza el proceso actual por que queremos ejecutar. En argvv[0] tenemos el nombre
             //y en agrvv tenemos sus arguemntos
-            if (execvp(argvv[0], argvv) == -1) {
-                perror("Error ejecutando comando");
-                exit(-11);
+            if (strcmp(argvv[0], "mygrep") == 0) {
+                // Ejecuta "mygrep" sin especificar la ruta completa
+                if (execvp("mygrep", argvv) == -1) {
+                    perror("Error ejecutando mygrep");
+                    exit(-11);
+                }
+            else {
+                // Para cualquier otro comando, se ejecuta normalmente.
+                if (execvp(argvv[0], argvv) == -1) {
+                    perror("Error ejecutando comando");
+                    exit(-11);
+                }
             }
         }
     }
