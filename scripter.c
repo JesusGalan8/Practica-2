@@ -95,6 +95,8 @@ int procesar_linea(char *linea) {
     /*Cada comando, excepto del primero y el último, nesetiran conestrarse con el anterior y el siguiente. 
     De manera que si tenemos n comandos solo necesitamos n-1 concexiones*/
     int pipes[num_comandos - 1][2];
+    //Cramos un array para guardar cada identificador de cada hijo
+    pid_t pids[num_comandos];
     //Creamos los pipes
     for (int i = 0; i < num_comandos - 1; i++) {
         if (pipe(pipes[i]) == -1) {
@@ -103,10 +105,9 @@ int procesar_linea(char *linea) {
         }
     } 
 
-    //Cramos un array para guardar cada identificador de cada hijo
-    pid_t pids[num_comandos];
     //Creanis un bucle que recorre cada comnaod
     for (int i = 0; i < num_comandos; i++) {
+        memset(argvv,0,sizeof(argvv));
         /*Vamos da dvidiadr el comando en partes usandoo como delimitadores
         espacio, tabubulación o salto de línea. De esta maenra en el primer 
         tolen tendrémos el nombre del coamdno y en los siguientes sus argumentos*/
@@ -133,15 +134,19 @@ int procesar_linea(char *linea) {
             }
             //Si i no es el último coamndo, dbe enviar su salida al siguiente comando mediante el pipe
             if (i != num_comandos - 1) {
+                close(1);
                 if (dup(pipes[i][1]) < 0) {          // Duplicamos el extremo de escritura del pipe actual
                     perror("Error en dup para STDOUT");
                     exit(-4);
-                }            }
+                }
+            }
+
             //Una vez redirigidos los descriptores, entonces podemos cerrar los originales
             for (int j = 0; j < num_comandos - 1; j++) {
                 close(pipes[j][0]);
                 close(pipes[j][1]);
             }
+
             //Si filev[0] no es null entnces signifca qeu se indico un archivo para la entrada
             if (filev[0] != NULL) {
                 //Abrimos el archvo en modo lectura
@@ -189,19 +194,29 @@ int procesar_linea(char *linea) {
             }
             //La función remplanza el proceso actual por que queremos ejecutar. En argvv[0] tenemos el nombre
             //y en agrvv tenemos sus arguemntos
-            if (strcmp(argvv[0], "mygrep") == 0) {
-                // Ejecuta "mygrep" sin especificar la ruta completa
-                if (execvp("mygrep", argvv) == -1) {
-                    perror("Error ejecutando mygrep");
-                    exit(-11);
-                }
-            else {
-                // Para cualquier otro comando, se ejecuta normalmente.
-                if (execvp(argvv[0], argvv) == -1) {
-                    perror("Error ejecutando comando");
-                    exit(-11);
-                }
+            if (argvv[0] == "mygrep"){
+                argvv[0] = "./mygrep";
             }
+     
+            // Para cualquier otro comando, se ejecuta normalmente.
+            printf("Comando = %s\n", argvv[0]);                                         //Imprime el comando
+            for(int arg = 1; arg < MAX_ARGS; arg++)                                     //Recorre los argumentos
+                if(argvv[arg] != NULL)                                                  //Si el argumento no es NULL
+                    printf("Args %d = %s\n", arg, argvv[arg]);                                  //Imprime cada argumento
+                    
+            printf("Background = %d\n", background);                                    //Imprime el flag de background
+            if(filev[0] != NULL)                                                        //Si hay redireccion de entrada
+                printf("Redir [IN] = %s\n", filev[0]);                                  //Imprime el archivo de entrada
+            if(filev[1] != NULL)                                                        //Si hay redireccion de salida
+                printf("Redir [OUT] = %s\n", filev[1]);                                 //Imprime el archivo de salida
+            if(filev[2] != NULL)                                                        //Si hay redireccion de error
+                printf("Redir [ERR] = %s\n", filev[2]);                                 //Imprime el archivo de error
+
+            if (execvp(argvv[0], argvv) == -1) {
+                perror("Error ejecutando comando");
+                exit(-11);
+            }
+        
         }
     }
     //Cerramos los pipes en el proceso padre ya que para este no son necesarios
@@ -213,7 +228,7 @@ int procesar_linea(char *linea) {
     el padre va a esperar a que cada uno de sus hijos termine*/
     if (background == 0) {
         for (int i = 0; i < num_comandos; i++) {
-            waitpid(pids[i], NULL, 0);
+            wait(NULL);
         }
     } else {
         //en caso contrario el padre imprimirá el 
@@ -244,10 +259,6 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     
-
-    /* STUDENTS CODE MUST BE HERE */
-    char example_line[] = "ls -l | grep scripter | wc -l > redir_out.txt &";
-    int n_commands = procesar_linea(example_line);
     int fd;
 
     if ((fd = open(argv[1], O_RDONLY)) == -1) {
@@ -287,7 +298,9 @@ int main(int argc, char *argv[]) {
                 }
                 else{
                     // Si es válida se procesocesa la línea para separar el comando
+                    printf("Voy a ejecutar la línea %s\n",line);
                     procesar_linea(line);
+                    background = 0;
                 }
                 line_number++;  // Incrementamos el contador de líneas
                 line_pos = 0;   // Reiniciamos la posición para la siguiente línea
