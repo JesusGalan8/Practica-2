@@ -1,0 +1,4 @@
+Primera línea sin coincidencias
+Esta línea tiene la palabra texto
+Otra línea con texto en su contenido
+Línea irrelevante

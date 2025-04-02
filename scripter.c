@@ -12,8 +12,6 @@ const int max_commands = 10;
 #define max_redirections 3 //stdin, stdout, stderr
 #define max_args 15
 #define BUFFER_SIZE 512
-#define MAX_LINE 1024
-#define MAX_ARGS 15
 /* VARS TO BE USED FOR THE STUDENTS */
 char * argvv[max_args];
 char * filev[max_redirections];
@@ -114,7 +112,7 @@ int procesar_linea(char *linea) {
         /*Vamos da dvidiadr el comando en partes usandoo como delimitadores
         espacio, tabubulación o salto de línea. De esta maenra en el primer 
         tolen tendrémos el nombre del coamdno y en los siguientes sus argumentos*/
-        tokenizar_linea(comandos[i], " \t\n", argvv, MAX_ARGS);
+        tokenizar_linea(comandos[i], " \t\n", argvv, max_args);
         procesar_redirecciones(argvv);
         
         //Creamos un nuevo hijo con fork y el resultado se almacena en pids[i]
@@ -156,12 +154,12 @@ int procesar_linea(char *linea) {
                 int fd_in = open(filev[0], O_RDONLY);
                 // Si falla mostramos error
                 if (fd_in < 0) {
-                    perror("Error abriendo archivo de entrada");
+                    perror("Error abriendo fichero de entrada");
                     exit(-5);
                 }
                 close(0);
                 if (dup(fd_in) < 0) {
-                    perror("Error duplicando fd de entrada");
+                    perror("Error duplicando fichero de entrada");
                     exit(-6);
                 }
                 close(fd_in);
@@ -171,12 +169,12 @@ int procesar_linea(char *linea) {
             if (filev[1] != NULL) {
                 int fd_out = open(filev[1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
                 if (fd_out < 0) {
-                    perror("Error abriendo archivo de salida");
+                    perror("Error abriendo el fichero de salida");
                     exit(-7);
                 }
                 close(1);
                 if (dup(fd_out) < 0) {
-                    perror("Error duplicando fd de salida");
+                    perror("Error duplicando fichero de salida");
                     exit(-8);
                 }
                 close(fd_out);
@@ -185,12 +183,12 @@ int procesar_linea(char *linea) {
             if (filev[2] != NULL) {
                 int fd_err = open(filev[2], O_WRONLY | O_CREAT | O_TRUNC, 0644);
                 if (fd_err < 0) {
-                    perror("Error abriendo archivo de error");
+                    perror("Error abriendo fichero de error");
                     exit(-9);
                 }
                 close(2);
                 if (dup(fd_err) < 0) {
-                    perror("Error duplicando fd de error");
+                    perror("Error duplicando fichero de error");
                     exit(-10);
                 }
                 close(fd_err);
@@ -248,7 +246,7 @@ int es_linea_valida(char *linea) {
 int main(int argc, char *argv[]) {
     // Verificar argumentos
     if (argc != 2) {
-        perror("Se han dado más argumentos de los permitidos");
+        perror("Error: número de argumentos incorrecto");
         return -12;
     }
     
@@ -261,7 +259,7 @@ int main(int argc, char *argv[]) {
     char buffer[BUFFER_SIZE];
     ssize_t bytes_read;
     //line es un array donde vamos a ir guardando la líena actual
-    char line[MAX_LINE];
+    char line[max_line];
     //Aqui cuardamso la posición actual en la línea
     int line_pos = 0;
     int line_number = 0;
@@ -286,7 +284,7 @@ int main(int argc, char *argv[]) {
                 // se verifica que la linea cumple con el formato esperado
                 if (line_number == 0){
                     if ((es_linea_valida(line)) == -1) {
-                        perror("Encabezado inválido: no es un script de SSOO");
+                        perror("El encabezado es diferente de ## Script de SSOO");
                         if (close(fd) == -1){
                             perror("Error cerrando el fichero");
                             return -16;
@@ -306,10 +304,10 @@ int main(int argc, char *argv[]) {
                 /*Max line es la longuitud máxima que puede tener una línea. Entonces antes de agregar un nuevo caracter debemos verificar que hay espacio para 
                 agregarlos. Asimismo, usamos max_line -1 ya que la última posición esta reservada para el \0, que indica el fin de la cadana
                 */
-                if (line_pos < MAX_LINE - 1) {
+                if (line_pos < max_line - 1) {
                     line[line_pos++] = buffer[i];
                 } else {
-                    perror("Se excede el tamaño permitido");
+                    perror("Se excede el tamaño permitido por línea");
                     if (close(fd) == -1){
                         perror("Error cerrando el fichero");
                         return -18;

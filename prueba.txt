@@ -1,8 +1,8 @@
 ## Script de SSOO
-ls -la > salida.txt
-ls -l | grep scripter
-cat < scripter.c !> error_cat.txt
-comando_inexistente
-sleep 2 &
-cat scripter.c | grep main | wc -l
-grep int scripter.c > grep_output.txt !> grep_error.txt
+ls
+cat entrada.txt | grep texto
+cat < entrada2.txt
+ls paco !> error.txt
+sleep 5 &
+grep texto < entrada.txt > salida.txt
+
