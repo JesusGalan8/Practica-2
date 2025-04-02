@@ -33,29 +33,21 @@ int main(int argc, char *argv[]) {  // Función principal, recibe argumentos des
 
     // Leemos el fichero de entrada carácter a carácter.
     while ((bytes_read = read(in_fd, buffer, BUFFER_SIZE)) > 0) {
-        //Leemos caracter por caracter el buffer
         for (ssize_t i = 0; i < bytes_read; i++){
-            // Si encontramos un salto de línea, significa que hemos llegado al final de la línea.
             if (buffer[i] == '\n' || pos_line >= MAX_LINE - 1) {
-                //Si la línea coincide con la cadena que nos han pasado como argumento, la imprimimos.
+                line[pos_line] = '\0';
                 if (strstr(line, argv[2]) != NULL) {
                     printf("%s\n",line);
-                    // Marcamos que hemos encontrado la cadena.
                     found = 1;
                 }
-                // Pasamos a la siguiente línea
                 pos_line = 0;
             } else {
-                // Si no hemos llegado al final de la línea, guardamos el carácter en la línea
                 line[pos_line++] = buffer[i];
             }
         }
     }
 
-    if (close(in_fd)==-1){
-        perror("Error cerrando el fichero");
-        return -3;
-    }
+    close(in_fd);
 
     // Si no se encontró la cadena, se imprime el mensaje correspondiente.
     if (found == 0) {

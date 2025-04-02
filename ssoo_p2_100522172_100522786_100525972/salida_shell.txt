@@ -1,0 +1,16 @@
+dir
+file.txt
+file.txt
+file.txt
+foo.txt
+mygrep
+#include <stdlib.h>
+
+bfdbbfdddd  file.txt
+.
+..
+file.txt
+file.txt
+file.txt
+file.txt
+a

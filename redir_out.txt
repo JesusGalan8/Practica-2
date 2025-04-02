@@ -1,2 +1,0 @@
-Redir [OUT] = redir_out.txt
-0

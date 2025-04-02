@@ -274,24 +274,19 @@ int main(int argc, char *argv[]) {
             if (buffer[i] == '\n') {
                 // Ponemos un \0 para indicar que hemos terminado
                 line[line_pos] = '\0'; // Termina la línea
+
                 
                 if (line_pos == 0){
                     perror("La línea esta vacía");
-                    if (close(fd) == -1){
-                        perror("Error cerrando el fichero");
-                        return -14;
-                    }
-                    return -15;
+                    close(fd);
+                    return -14;
                 }
                 // se verifica que la linea cumple con el formato esperado
                 if (line_number == 0){
                     if ((es_linea_valida(line)) == -1) {
                         perror("Encabezado inválido: no es un script de SSOO");
-                        if (close(fd) == -1){
-                            perror("Error cerrando el fichero");
-                            return -16;
-                        }                        
-                        return -17;                
+                        close(fd);
+                        return -15;                
                     }
                 }
                 else{
@@ -310,19 +305,13 @@ int main(int argc, char *argv[]) {
                     line[line_pos++] = buffer[i];
                 } else {
                     perror("Se excede el tamaño permitido");
-                    if (close(fd) == -1){
-                        perror("Error cerrando el fichero");
-                        return -18;
-                    }                    
-                    return -19;
+                    close(fd);
+                    return -16;
                 }
             }
         }
     }
 
-    if (close(fd) == -1){
-        perror("Error cerrando el fichero");
-        return -20;
-    }
+    close(fd);
     return 0;
 }
